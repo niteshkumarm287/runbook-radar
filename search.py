@@ -41,22 +41,18 @@ GENERIC_ALERT_TERMS = {
     "warning",
 }
 
+
 def extract_terms(text):
-    return set(
-        re.findall(r"[a-z0-9]+", text.lower())
-    )
+    return set(re.findall(r"[a-z0-9]+", text.lower()))
+
 
 def load_runbooks(directory):
     runbooks = []
 
     for runbook_path in sorted(directory.rglob("*.md")):
-        runbook_text = runbook_path.read_text(
-            encoding="utf-8"
-        )
+        runbook_text = runbook_path.read_text(encoding="utf-8")
 
-        relative_name = runbook_path.relative_to(
-            directory
-        ).with_suffix("")
+        relative_name = runbook_path.relative_to(directory).with_suffix("")
 
         normalized_name = " ".join(
             re.findall(
@@ -76,94 +72,75 @@ def load_runbooks(directory):
 
     return runbooks
 
+
 def search_runbooks(
     query,
     runbooks,
     limit=3,
     minimum_similarity=MINIMUM_SIMILARITY,
 ):
+    if limit < 0:
+        raise ValueError("limit must be non-negative")
+    if not 0 <= minimum_similarity <= 1:
+        raise ValueError("minimum_similarity must be between 0 and 1")
+    if not runbooks or not query.strip() or limit == 0:
+        return []
+
     query_terms = extract_terms(query)
 
     distinctive_query_terms = (
-        query_terms
-        - GENERIC_ALERT_TERMS
-        - set(ENGLISH_STOP_WORDS)
+        query_terms - GENERIC_ALERT_TERMS - set(ENGLISH_STOP_WORDS)
     )
 
-    runbook_texts = [
-        runbook["text"]
-        for runbook in runbooks
-    ]
+    runbook_texts = [runbook["text"] for runbook in runbooks]
 
-    runbook_names = [
-        runbook["normalized_name"]
-        for runbook in runbooks
-    ]
+    runbook_names = [runbook["normalized_name"] for runbook in runbooks]
 
-    body_vectorizer = TfidfVectorizer(
-        stop_words="english"
-    )
+    body_vectorizer = TfidfVectorizer(stop_words="english")
 
-    body_vectors = body_vectorizer.fit_transform(
-        runbook_texts
-    )
-
-    query_body_vector = body_vectorizer.transform(
-        [query]
-    )
-
-    body_scores = cosine_similarity(
-        query_body_vector,
-        body_vectors,
-    ).flatten()
+    try:
+        body_vectors = body_vectorizer.fit_transform(runbook_texts)
+    except ValueError as error:
+        if "empty vocabulary" not in str(error):
+            raise
+        body_scores = [0.0] * len(runbooks)
+    else:
+        query_body_vector = body_vectorizer.transform([query])
+        body_scores = cosine_similarity(query_body_vector, body_vectors).flatten()
 
     filename_vectorizer = TfidfVectorizer(
         analyzer="char_wb",
         ngram_range=(3, 5),
     )
 
-    filename_vectors = (
-        filename_vectorizer.fit_transform(runbook_names)
-    )
-
-    query_filename_vector = (
-        filename_vectorizer.transform([query])
-    )
-
-    filename_scores = cosine_similarity(
-        query_filename_vector,
-        filename_vectors,
-    ).flatten()
+    try:
+        filename_vectors = filename_vectorizer.fit_transform(runbook_names)
+    except ValueError as error:
+        if "empty vocabulary" not in str(error):
+            raise
+        filename_scores = [0.0] * len(runbooks)
+    else:
+        query_filename_vector = filename_vectorizer.transform([query])
+        filename_scores = cosine_similarity(
+            query_filename_vector, filename_vectors
+        ).flatten()
 
     effective_filename_scores = []
     match_scores = []
 
     for index, runbook in enumerate(runbooks):
-        filename_terms = extract_terms(
-            runbook["normalized_name"]
-        )
+        filename_terms = extract_terms(runbook["normalized_name"])
 
-        filename_term_matches = (
-            distinctive_query_terms & filename_terms
-        )
+        filename_term_matches = distinctive_query_terms & filename_terms
 
-        raw_filename_score = float(
-            filename_scores[index]
-        )
+        raw_filename_score = float(filename_scores[index])
 
-        if (
-            len(filename_term_matches)
-            >= MINIMUM_FILENAME_TERM_MATCHES
-        ):
-            effective_filename_score = (
-                raw_filename_score
-            )
+        if len(filename_term_matches) >= MINIMUM_FILENAME_TERM_MATCHES:
+            effective_filename_score = raw_filename_score
         else:
             effective_filename_score = 0.0
 
-        effective_filename_scores.append(
-            effective_filename_score
-        )
+        effective_filename_scores.append(effective_filename_score)
 
         match_scores.append(
             max(
@@ -187,14 +164,10 @@ def search_runbooks(
             break
 
         runbook_terms = extract_terms(
-            runbooks[index]["normalized_name"]
-            + " "
-            + runbooks[index]["text"]
+            runbooks[index]["normalized_name"] + " " + runbooks[index]["text"]
         )
 
-        distinctive_matches = (
-            distinctive_query_terms & runbook_terms
-        )
+        distinctive_matches = distinctive_query_terms & runbook_terms
 
         if distinctive_query_terms and not distinctive_matches:
             continue
@@ -214,6 +187,7 @@ def search_runbooks(
 
     return results
 
+
 if __name__ == "__main__":
     if not RUNBOOKS_DIRECTORY.is_dir():
         print(
@@ -230,7 +204,7 @@ if __name__ == "__main__":
             RUNBOOKS_DIRECTORY,
         )
         raise SystemExit(1)
-    
+
     query = input("Enter alert name: ").strip()
 
     if not query:
@@ -246,7 +220,4 @@ if __name__ == "__main__":
         print("No reliable runbook match found.")
     else:
         for rank, result in enumerate(results, start=1):
-            print(
-                f"{rank}. {result['name']} "
-                f"(match score: {result['score']:.1%})"
-            )
+            print(f"{rank}. {result['name']} (match score: {result['score']:.1%})")
