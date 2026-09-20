@@ -1,0 +1,72 @@
+[
+  {
+    "id": "checkout-503",
+    "alert": "Customers receive 503 errors from the checkout endpoint",
+    "expected_runbook": "checkout-api-5xx"
+  },
+  {
+    "id": "checkout-after-release",
+    "alert": "Payment checkout failures increased after the latest deployment",
+    "expected_runbook": "checkout-api-5xx"
+  },
+  {
+    "id": "kafka-order-backlog",
+    "alert": "Order event consumer backlog continues to grow",
+    "expected_runbook": "kafka-consumer-lag"
+  },
+  {
+    "id": "kafka-processing-delay",
+    "alert": "Kafka consumer group is processing messages slowly",
+    "expected_runbook": "kafka-consumer-lag"
+  },
+  {
+    "id": "filesystem-warning",
+    "alert": "Node filesystem usage exceeded the warning threshold",
+    "expected_runbook": "disk-space-high"
+  },
+  {
+    "id": "persistent-volume-full",
+    "alert": "Persistent volume has very little free space remaining",
+    "expected_runbook": "disk-space-high"
+  },
+  {
+    "id": "unrelated-wifi",
+    "alert": "Employee cannot connect to the office Wi-Fi",
+    "expected_runbook": null
+  },
+  {
+    "id": "database-replication-lag",
+    "alert": "Database replication lag is increasing",
+    "expected_runbook": null
+  },
+  {
+    "id": "checkout-unavailable-after-release",
+    "alert": "Checkout API unavailable after production release",
+    "expected_runbook": "checkout-api-5xx"
+  },
+  {
+    "id": "order-events-backlog",
+    "alert": "Order events consumer backlog growing",
+    "expected_runbook": "kafka-consumer-lag"
+  },
+  {
+    "id": "filesystem-almost-full",
+    "alert": "Persistent volume filesystem almost full",
+    "expected_runbook": "disk-space-high"
+  },
+  {
+    "id": "authentication-api-errors",
+    "alert": "Authentication API 5xx errors",
+    "expected_runbook": null
+  },
+  {
+    "id": "certificate-expiration",
+    "alert": "TLS certificate expiration warning",
+    "expected_runbook": null
+  },
+  {
+    "id": "cpu-saturation",
+    "alert": "Search worker CPU saturation",
+    "expected_runbook": null
+  }
+]
