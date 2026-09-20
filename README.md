@@ -113,6 +113,10 @@ No reliable runbook match found.
 - Expand the synthetic evaluation set
 - Test with sanitized real-world alert/runbook pairs
 - Improve result explanations
-- Add automated tests
+- Expand automated regression tests
 - Support direct runbook links
 - Explore semantic embeddings in a later version
+
+## Development and review
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local checks, configuration handling, and the review workflow.
